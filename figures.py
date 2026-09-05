@@ -1,8 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Strict IEEE typography & sizing for single-column (3.5 in) plots
+# Strict IEEE typography & sizing for single-column (3.5 in) plots.
+# pdf.fonttype/ps.fonttype = 42 embeds real (Type 1/TrueType) outline
+# fonts instead of matplotlib's default Type 3 bitmap fonts, which IEEE
+# Xplore rejects.
 plt.rcParams.update({
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
     "font.family": "serif",
     "font.size": 8,
     "axes.labelsize": 7.5,
@@ -81,7 +86,7 @@ ax2.axvline(0.948, color='g', linestyle=':', ymax=0.62,
 ax2.set_xlabel(r"Rebound Elasticity $\eta$")
 ax2.set_ylabel(r"Long-run $\Delta \ln N$")
 ax2.set_title("(b) Feasibility Limit", pad=4)
-ax2.legend(frameon=True, framealpha=0.9, edgecolor='none', loc="lower left",
+ax2.legend(frameon=True, framealpha=0.9, edgecolor='none', loc="upper left",
            borderpad=0.3, handletextpad=0.4, labelspacing=0.3)
 ax2.grid(True, linestyle=':', alpha=0.5)
 
