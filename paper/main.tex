@@ -1,0 +1,869 @@
+\documentclass[conference,letterpaper,10pt]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{balance}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{empty}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Nt}{N^{\ast}}
+\newcommand{\xt}{x^{\ast}}
+\newcommand{\edot}{\dot{e}}
+\newcommand{\mudot}{\dot{\mu}}
+
+\begin{document}
+
+\title{Jevons' Paradox as a Safety-Critical Control Problem:\\
+Consistent Rebound Dynamics and the Feasibility Limits of Fiscal Feedback}
+
+\author{\IEEEauthorblockN{Peter Zsoldos}
+\IEEEauthorblockA{Department of Computer Science and Electrical Engineering\\
+Tampere University, Tampere, Finland\\
+\texttt{zsoldosp44@gmail.com}}%
+}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Efficiency gains can raise total resource use---Jevons' paradox---which
+invites a control formulation in which a dynamic resource tax rejects
+efficiency shocks as disturbances. We show that the natural two-state
+encoding of this idea, carrying resource draw $N$ and output $Y$ as
+independent states alongside the definition $e=Y/N$ and an exogenous
+efficiency path, is over-determined, is not invariant to the units of
+the efficiency index, and structurally cannot represent efficiency
+savings, so backfire is assumed rather than derived. Imposing the
+identity yields a scalar plant that is linear in the geodesic
+coordinate $x=\ln N$ and affine in the log gross tax $v=\ln(1+\tau)$
+with constant actuation gain. In this plant backfire holds \emph{iff}
+the demand elasticity satisfies $\eta>1$, and efficiency lowers
+consumption on impact before raising it. Two conclusions reverse: the
+disturbance that matters is the efficiency \emph{level}, not its
+velocity, which is stabilising; and first-order Taylor prediction of
+delayed data yields a neutral-type loop with exact margin
+$\kappa\tau_d<0.9417$, \emph{below} the $\pi/2$ margin of the
+unpredicted loop. The main result is a feasibility obstruction:
+autonomous demand growth alone needs a $75\%$ peak tax and is
+controllable, whereas adding the rebound channel raises the requirement
+to $223\%$ and makes barrier feasibility fail for $\eta>0.948$---%
+stricter than the backfire threshold. Feedback cuts cumulative
+overshoot by $68\%$ but cannot render the safe set invariant at
+credible tax ceilings.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Control barrier functions, predictor feedback, neutral delay systems,
+actuator saturation, resource economics, rebound effect.
+\end{IEEEkeywords}
+
+\section{Introduction}
+William Stanley Jevons observed in 1865 that efficiency gains in coal
+use increased, rather than reduced, aggregate coal consumption
+\cite{jevons1865}. When the economy-wide rebound exceeds $100\%$ the
+condition is called backfire \cite{khazzoom1980,brookes1990,
+saunders2008}. Its magnitude is contested: Gillingham \emph{et
+al.}~\cite{gillingham2016} find little support for economy-wide
+backfire, while sectoral ICT studies report rebound factors of
+$1.2$--$1.6$ \cite{sorrell2007,coroama2019}. A useful model must
+therefore treat the rebound magnitude as a parameter and report how
+conclusions depend on it---the approach taken here.
+
+A natural idea is to treat resource policy as feedback control: make
+the tax a function of the measured state, so efficiency shocks are
+rejected as disturbances rather than absorbed as consumption growth.
+We pursued that programme and report that it survives only after
+substantial repair. The two-state encoding of Section~\ref{sec:defects}
+is our own first formulation, implemented and calibrated before we
+found the defects reported below; we present it rather than quietly
+discarding it because the defects are ones any first attempt is likely
+to reproduce, and the corrected model reverses two conclusions we had
+drawn from the flawed one.
+
+\emph{Related work.} Rebound quantification dates to the
+Khazzoom--Brookes postulate \cite{khazzoom1980,brookes1990}, surveyed
+in \cite{sorrell2009,gillingham2016}; computable general equilibrium
+approaches are descriptive, not suited to algorithmic policy design.
+Ecological economists argue for absolute caps \cite{rockstrom2009},
+and the choice between a price and a quantity instrument is
+Weitzman's classical problem \cite{weitzman1974}: quantity dominates
+when marginal damage is steep relative to marginal
+abatement---precisely the case at a hard threshold, of which our
+feasibility result is a dynamic restatement. On the control side,
+forward invariance of a safe set is the province of control barrier
+functions \cite{ames2017}, not control Lyapunov functions
+\cite{kokotovic2001}---often conflated, and separated in
+Section~\ref{sec:control}. For delay compensation the lineage is the
+dead-time compensator \cite{smith1957}, finite spectrum assignment
+\cite{manitius1979} and predictor feedback \cite{krstic2009}; stability
+of the resulting neutral equations needs the difference-operator
+machinery of \cite{hale1993} and the eigenvalue methods of
+\cite{michiels2007}.
+
+\emph{Contributions.} (i) Three independent defects in the natural
+two-state formulation (Section~\ref{sec:defects}). (ii) A consistent
+scalar plant (Section~\ref{sec:plant}) in which backfire is derived,
+not assumed, and which reproduces the observed Jevons time signature.
+(iii) A corrected delay-margin theorem (Section~\ref{sec:delay}): the
+first-order Taylor predictor's exact margin is \emph{smaller} than the
+unpredicted loop's. (iv) A feasibility obstruction
+(Sections~\ref{sec:control}--\ref{sec:results}): because the required
+tax is convex in the log-consumption gap, the rebound channel is the
+increment that crosses the actuator bound despite not being the larger
+contributor. (v) Negative findings reported rather than suppressed
+(Section~\ref{sec:neg}).
+
+\section{Model}
+
+\subsection{Three Defects of the Two-State Formulation}
+\label{sec:defects}
+Our first formulation was the one that suggests itself immediately: state
+$\bm{x}=[N,Y]^{\!\top}$, efficiency $e=Y/N$ declared as a definition,
+an exogenously prescribed efficiency path $e(t)$, and dynamics
+\begin{equation}
+\label{eq:v1}
+    \dot{\bm{x}} = f(\bm{x}) + g(\bm{x})\tau + \bm{D}\edot(t),
+\end{equation}
+with logistic $f$, multiplicative $g$ and constant coupling $\bm{D}$.
+We implemented and calibrated \eqref{eq:v1} against IEA data-centre
+electricity projections \cite{iea2024}. It has three independent
+defects.
+
+\emph{(D1) Over-determination.} If $e=Y/N$ is an identity and $N,Y$
+each carry an independent ODE, $e(t)$ is determined by the state and
+cannot also be prescribed; the prescribed $e(t)$ and the realised
+$Y(t)/N(t)$ diverge by up to $6.4\times$ over $40$~yr.
+\emph{(D2) Units dependence.} The rebound enters as $D_N\edot$, not
+invariant under $e\mapsto ce$: rescaling the efficiency
+index---physically the same technology in different units---moves peak
+consumption from $3.96$ to $7.43$ normalised units. A prediction
+depending on the units of an index is not a prediction.
+\emph{(D3) No savings channel.} With $D_N>0$ and $\edot>0$ every
+efficiency gain strictly increases $N$; no parameter gives
+$\partial N/\partial e<0$, so backfire is assumed in \eqref{eq:v1}
+rather than found.
+
+These defects are structural, not calibration issues; every
+quantitative claim derived from \eqref{eq:v1} must be regarded as an
+artefact. The plant below is a replacement, not a refinement, and all
+numbers in Section~\ref{sec:results} are recomputed from scratch.
+
+\subsection{A Consistent Rebound Plant}
+\label{sec:plant}
+We keep the object that is genuinely exogenous---technology---and
+impose the identity rather than duplicating it. Let
+$\mu(t):=\ln e(t)$ be log efficiency. Because $e\mapsto ce$ shifts
+$\mu$ by a constant, any model depending on $\mu$ only through
+differences and derivatives is scale-free, curing~D2. Let $Y$ denote
+demand for the energy \emph{service}, with effective service price
+$p_{\text{eff}}(t)=(1+\tau(t))p_0/e(t)$, so that efficiency lowers and
+the tax raises the cost of a unit of service. With constant-elasticity
+long-run demand and partial adjustment at rate $\lambda>0$,
+\begin{equation}
+\label{eq:demand}
+\begin{aligned}
+    \tfrac{d}{dt}\ln Y &= \lambda\big(\ln Y^{\ast}(t) - \ln Y(t)\big), \\
+    \ln Y^{\ast}(t) &= \ln A_0 + \gamma t + \eta\,\mu(t) - \eta\, v(t),
+\end{aligned}
+\end{equation}
+where $\eta>0$ is the demand (rebound) elasticity, $\gamma$ the
+autonomous income growth rate of service demand, and
+$v:=\ln(1+\tau)\in\mathcal{V}=[0,v_{\max}]$, $v_{\max}=\ln(1+\tau_{\max})$,
+is the \emph{log gross tax}. Imposing $N=Y/e$, i.e.\
+$x:=\ln N=\ln Y-\mu$, gives the scalar plant
+\begin{equation}
+\label{eq:plant}
+    \dot{x} = \underbrace{\lambda\big[\ln A_0 + \gamma t + (\eta-1)\mu(t) - x\big]
+              - \mudot(t)}_{=:F(x,t)} \;+\; G\,v ,
+\end{equation}
+with \emph{constant} actuation gain $G=-\lambda\eta<0$. We normalise
+$\mu(0)=0$, which is free by the scale-invariance above, and set
+$\ln A_0=\ln N(0)$ so that the untaxed system starts on its frozen-time
+equilibrium; all boundary pressure in what follows is therefore
+generated by $\gamma$ and $\mu$ rather than by an initial transient.
+
+Three structural gains follow. The plant is exactly affine in the
+control; the actuation gain is constant, so the singularity
+$g_N(\bm{x})=0$ that afflicts \eqref{eq:v1} cannot occur and no
+policy-irrelevance caveat is needed; and \eqref{eq:plant} is
+\emph{linear} in $x$, so the delay analysis of
+Section~\ref{sec:delay} is exact rather than a linearisation. The
+accessibility distribution of \eqref{eq:v1} degenerates on a
+codimension-one locus; once the identity is imposed the system is
+one-dimensional with $G\neq0$ everywhere, so that apparent geometric
+richness was an artefact of the spurious degree of freedom introduced
+by~D1.
+
+\subsection{Backfire is Derived, Not Assumed}
+\begin{proposition}[Backfire condition]
+\label{prop:backfire}
+Let $\mu$ and $v$ be constant. The frozen-time equilibrium of
+\eqref{eq:plant} satisfies
+$x_{\rm ss}=\ln A_0+\gamma t+(\eta-1)\mu-\eta v$, so
+$\partial x_{\rm ss}/\partial\mu=\eta-1$. A permanent efficiency
+improvement therefore raises long-run consumption iff $\eta>1$, leaves
+it unchanged iff $\eta=1$, and lowers it iff $\eta<1$.
+\end{proposition}
+\begin{proof}
+Set $\dot x=0$ and $\mudot=0$ in \eqref{eq:plant}, solve for $x$ and
+differentiate in $\mu$. Along the ramp $\gamma t$ the solution tracks
+$x_{\rm ss}$ with the constant offset $-\gamma/\lambda$, which is
+independent of $\mu$ and therefore does not affect
+$\partial x_{\rm ss}/\partial\mu$.
+\end{proof}
+
+\begin{proposition}[Jevons time signature]
+\label{prop:signature}
+The instantaneous response of consumption growth to an efficiency
+impulse is $\partial\dot x/\partial\mudot=-1<0$ for every $\eta$, while
+the long-run response is $\eta-1$. Efficiency therefore always reduces
+consumption on impact, and the rebound arrives with the demand
+adjustment time constant $1/\lambda$.
+\end{proposition}
+\begin{proof}
+Read the coefficient of $\mudot$ in \eqref{eq:plant} and combine with
+Proposition~\ref{prop:backfire}.
+\end{proof}
+
+Proposition~\ref{prop:backfire} recovers the textbook rebound threshold
+as a property of the dynamics rather than an input, curing~D3; the
+quasi-static target $x_{\rm ss}$ carries the efficiency contribution
+$(\eta-1)\mu(t)$ exactly, by construction, and we verified this
+identity numerically across $\eta\in[0.4,1.8]$, where
+$M:=\mu(T)-\mu(0)$. Proposition~\ref{prop:signature} is the content of
+Fig.~\ref{fig:mechanism}(a), which plots the \emph{realised} trajectory
+rather than this quasi-static target: for $\eta=1.4$ the efficiency
+contribution dips to $-0.42$ near $t=13$~yr, then recovers to only
+$+0.68$ by the horizon $t=25$~yr, short of the quasi-static
+$(\eta-1)M=0.88$ by the demand-adjustment lag $1/\lambda=4$~yr---so the
+$25$-year window in Table~\ref{tab:calib} understates the eventual
+backfire rather than overstating it. The two-state model \eqref{eq:v1}
+cannot produce this sign reversal at any parameter value.
+Fig.~\ref{fig:mechanism}(b) sweeps
+$\eta$ and locates the two thresholds that organise the paper: the
+backfire condition $\eta=1$ and the feasibility limit
+$\eta_{\rm crit}=0.948$ of Corollary~\ref{cor:etacrit}.
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{fig_mechanism}
+    \caption{Corrected rebound mechanism. (a) The efficiency
+    contribution to $\ln N$ is negative on impact and positive in the
+    long run, reversing sign near $t=17.6$~yr for $\eta=1.4$; the
+    two-state model cannot produce this. (b) Long-run consumption
+    versus rebound elasticity, with the derived backfire threshold
+    $\eta=1$ and the feasibility limit $\eta_{\rm crit}=0.948$.}
+    \label{fig:mechanism}
+\end{figure}
+
+\begin{remark}[The disturbance is the level, not the velocity]
+\label{rem:level}
+In \eqref{eq:plant} the efficiency level enters with coefficient
+$\lambda(\eta-1)$ and its velocity with coefficient $-1$. The velocity
+term is therefore \emph{stabilising}: rapid innovation transiently
+relieves rather than aggravates boundary pressure. This reverses the
+premise that $\edot$ is the disturbance to be rejected. The quantity
+that must be tracked is the accumulated level $(\eta-1)\mu(t)$.
+\end{remark}
+
+\begin{table}[!t]
+\centering
+\caption{Calibration ($N$ normalised by $\Nt=460$~TWh/yr)}
+\label{tab:calib}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llcl}
+\toprule
+Symbol & Meaning & Value & Basis \\
+\midrule
+$\Nt$        & Resource ceiling            & $1.0$    & IEA high scenario \cite{iea2024} \\
+$N(0)$       & 2023 data-centre draw       & $0.804$  & IEA \cite{iea2024} \\
+$A_0$        & Demand scale                & $0.804$  & $x(0)$ on frozen-time eq. \\
+$\mu(0)$     & Efficiency index origin     & $0$      & normalisation (D2) \\
+$\lambda$    & Demand adjustment rate      & $0.25$   & $\approx2.8$~yr half-life \\
+$\gamma$     & Autonomous service growth   & $0.04$   & long-run digital demand \\
+$\eta$       & Rebound elasticity          & $1.40$   & ICT range \cite{sorrell2007,coroama2019} \\
+$M$          & Total log efficiency gain   & $\ln 9$  & three GPU generations \\
+$\tau_{\max}$& Actuator ceiling            & $1.0$    & $100\%$ tax \\
+$\tau_d$     & Reporting delay             & $1.0$~yr & macro release lag \\
+$K$          & Lyapunov gain               & $2.0$    & design choice \\
+$T$          & Horizon                     & $25$~yr  & 2025--2050 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Geometry, Control Design and Feasibility}
+\label{sec:control}
+Let the safe set be $\Omega=\{x:h(x)\ge0\}$ with $h(x):=\xt-x$ and
+$\xt=\ln\Nt$, and take the quadratic Lyapunov function
+$V(x)=\tfrac12(x-\xt)^2$ in the log coordinate: $x=\ln N$ is where the
+plant \eqref{eq:plant} is linear, and it is also the geodesic
+coordinate of the metric $g_{NN}=1/(\sigma N^2)$ for an elasticity of
+substitution $\sigma$, which enters $V$ only as a positive constant and
+so cancels from $\dot V\le-KV$---useful, since $\sigma$ is among the
+least reliably identified parameters in applied production theory.
+Also $V\to\infty$ as $N\to0^{+}$, so positivity of the resource state
+is preserved structurally.
+
+\subsection{Lyapunov Tracking and Barrier Filtering}
+Imposing $\dot V\le-KV$ on \eqref{eq:plant} and writing $z:=x-\xt$
+gives, in the interior of $\mathcal{V}$,
+\begin{equation}
+\label{eq:clf}
+    v_{\rm CLF} = \left[\frac{F(x,t) + \kappa\,z}{-G}\right]_0^{v_{\max}},
+    \qquad \kappa := \frac{K}{2},
+\end{equation}
+where $[\cdot]_0^{v_{\max}}$ denotes clipping to $\mathcal{V}$; the
+unsaturated closed loop is $\dot z=-\kappa z$. The factor $\kappa=K/2$
+follows from $\dot V\le-KV$ with $V=\tfrac12z^2$; all delay conditions
+below are stated in $\kappa$, and expressing them in $K$ introduces a
+factor-of-two error.
+
+A Lyapunov function certifies convergence to a target; it does not
+certify that a boundary is never crossed. With class-$\mathcal{K}$ gain
+$\alpha>0$, the invariance condition $\dot h\ge-\alpha h$ gives, since
+$G<0$,
+\begin{equation}
+\label{eq:cbf}
+    v \;\ge\; v_{\rm CBF}(x,t) := \frac{F(x,t)-\alpha\,(\xt-x)}{-G},
+\end{equation}
+and we deploy the minimum-intervention filter
+$v^{\star}=[v_{\rm CBF}(x,t)]_0^{v_{\max}}$. Far below the ceiling $h$
+is large and \eqref{eq:cbf} is slack, so $v_{\rm CBF}<0$ and no tax is
+levied: the nominal policy is no tax at all and the barrier is the only
+thing that ever raises $\tau$. If $x(0)\in\Omega$ and
+$v_{\rm CBF}(x(t),t)\le v_{\max}$ for all $t\ge0$, then $v^\star$
+satisfies $\dot h\ge-\alpha h$ pointwise, so
+$h(t)\ge h(0)e^{-\alpha t}\ge0$ by the comparison lemma and $\Omega$ is
+forward invariant \cite{ames2017}.
+
+\subsection{The Feasibility Obstruction}
+\label{sec:feas}
+Evaluating \eqref{eq:cbf} on $\partial\Omega$ defines the tax required
+to hold the ceiling,
+\begin{equation}
+\label{eq:vreq}
+    v_{\rm req}(t) = \frac{F(\xt,t)}{-G}
+    = \frac{\lambda\big[\ln A_0+\gamma t+(\eta-1)\mu(t)-\xt\big]-\mudot(t)}
+           {\lambda\eta},
+\end{equation}
+with $\tau_{\rm req}=e^{v_{\rm req}}-1$.
+
+\begin{proposition}[Admissibility]
+\label{prop:feas}
+$\Omega$ admits an invariance certificate at time $t$ iff
+$v_{\rm req}(t)\le v_{\max}$. Under Table~\ref{tab:calib} this fails on
+$30.8\%$ of the horizon, first at $t=17.3$~yr, with
+$\max_t\tau_{\rm req}=223\%$. Setting $M=0$ (income growth only) gives
+$\max_t\tau_{\rm req}=75\%$ and the condition never fails.
+\end{proposition}
+
+The decomposition behind Proposition~\ref{prop:feas} is the paper's
+central quantitative point. At the horizon the log-consumption gap the
+tax must close is
+$\underbrace{\gamma T}_{1.000\,(53\%)}+\underbrace{(\eta-1)M}_{0.879\,(47\%)}+\ln A_0$,
+so the two drivers are of comparable size. But $v_{\rm req}$ is linear
+in the gap while $\tau_{\rm req}=e^{v_{\rm req}}-1$ is exponential in
+it: a gap of $0.78$ needs $75\%$, a gap of $1.66$ needs $223\%$. The
+rebound channel is not the larger contributor, yet it is the increment
+that carries the requirement across the actuator bound, because the
+marginal cost of closing the gap rises exponentially
+(Fig.~\ref{fig:feasibility}).
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{fig_feasibility}
+    \caption{The central result. Income growth alone requires a peak
+    tax of $75\%$ and never exceeds the credible ceiling. Adding the
+    rebound channel raises the requirement to $223\%$ and makes the
+    invariance certificate infeasible from $t=17.3$~yr. The early dip
+    below zero is the transient savings channel of
+    Proposition~\ref{prop:signature}.}
+    \label{fig:feasibility}
+\end{figure}
+
+\begin{remark}[Convexity of the actuation requirement]
+\label{rem:convex}
+The mechanism above is convexity, not arithmetic, with a consequence
+for how the requirement should be reported. Write
+$\Gamma(t):=\ln A_0+\gamma t+(\eta-1)\mu(t)-\xt$ for the
+log-consumption gap, so $v_{\rm req}$ is affine in $\Gamma$ while
+$\tau_{\rm req}=e^{v_{\rm req}}-1$ is strictly convex in it. So
+attributing infeasibility to a single channel is meaningful only at
+the margin, as in Proposition~\ref{prop:feas}; and if $\Gamma$ is
+uncertain, Jensen's inequality gives
+$\mathbb{E}[\tau_{\rm req}]\ge e^{\mathbb{E}[v_{\rm req}]}-1$, with
+equality only for a degenerate distribution---the tax required on
+average strictly exceeds the tax at the nominal calibration, and the
+gap widens with the dispersion of $(\eta,\gamma,M)$. An actuator
+ceiling sized at nominal values is therefore systematically
+under-sized; this argues for reporting the distribution of
+$\tau_{\rm req}$ rather than a point value.
+\end{remark}
+
+\begin{corollary}[Critical elasticity]
+\label{cor:etacrit}
+At $\tau_{\max}=1$ the condition of Proposition~\ref{prop:feas} holds
+for all $t$ iff $\eta\le\eta_{\rm crit}=0.948$. Since
+$\eta_{\rm crit}<1$, controllability is lost \emph{before} backfire
+sets in: the policy-relevant threshold is stricter than the economic
+one.
+\end{corollary}
+\begin{proof}
+Since $\eta$ enters \eqref{eq:vreq} both as a multiplier of $\mu(t)$
+and as the divisor, monotonicity in $\eta$ is not immediate and
+deserves an argument rather than an appeal to Fig.~\ref{fig:mechanism}(b)
+alone. Write
+\begin{equation}
+\label{eq:vreq-split}
+\begin{aligned}
+    v_{\rm req}(\eta,t) &= \mu(t) + \frac{\Psi(t)}{\lambda\eta}, \\
+    \Psi(t) &:= \lambda\big[\ln A_0+\gamma t-\xt-\mu(t)\big] - \mudot(t),
+\end{aligned}
+\end{equation}
+obtained by expanding \eqref{eq:vreq}; $\Psi$ does not depend on
+$\eta$. Hence for fixed $t$, $v_{\rm req}(\cdot,t)$ is monotonic on
+$(0,\infty)$ with $\partial v_{\rm req}/\partial\eta=-\Psi(t)/(\lambda\eta^2)$,
+strict whenever $\Psi(t)\neq0$. As the efficiency path saturates,
+$\mudot(t),\ddot\mu(t)\to0$ near $t=T$, so
+$\partial v_{\rm req}/\partial t=\mudot(t)+\dot\Psi(t)/(\lambda\eta)
+\to\gamma/\eta>0$ there for every $\eta>0$: the requirement is
+eventually increasing in $t$ regardless of elasticity. Under
+Table~\ref{tab:calib} this terminal regime governs the maximum,
+$g(\eta):=\max_{t\in[0,T]}v_{\rm req}(\eta,t)=v_{\rm req}(\eta,T)
+=\mu(T)+\Psi(T)/(\lambda\eta)$, throughout $\eta\in[0.7,2.0]\ni\eta_{\rm crit}$,
+which we confirm numerically; for smaller $\eta$ the interior maximum
+occurs during the transient dip of Proposition~\ref{prop:signature}
+and is negative, hence trivially below $v_{\max}$. Since
+$\Psi(T)<0$ at this calibration, $g$ is strictly increasing on
+$[0.7,2.0]$, so it crosses $v_{\max}$ exactly once; $\eta_{\rm crit}$
+is that crossing, and $g(\eta)\le v_{\max}$ holds iff
+$\eta\le\eta_{\rm crit}$.
+\end{proof}
+
+\begin{lemma}[ISS with respect to estimate error]
+\label{lem:iss}
+Let the terms of $F$ be estimated with total error bounded by $\delta$
+and let the actuator be unsaturated. Then
+$|z(t)|\le|z(0)|e^{-\kappa t}+\delta/\kappa$.
+\end{lemma}
+\begin{proof}
+The perturbed loop is $\dot z=-\kappa z+w$ with $|w|\le\delta$; apply
+the comparison lemma to $\tfrac{d}{dt}|z|\le-\kappa|z|+\delta$.
+\end{proof}
+
+Lemma~\ref{lem:iss} holds only while $v\in(0,v_{\max})$. Once
+$v\equiv v_{\max}$ the loop is open and no input-to-state bound
+applies---a caveat binding for roughly $30\%$ of our horizon.
+
+\section{Delay Compensation}
+\label{sec:delay}
+Macroeconomic aggregates are released with a lag
+$\tau_d\approx0.5$--$1.5$~yr. The natural first attempt extrapolates
+one delay interval forward,
+$\hat{x}(t)=x(t-\tau_d)+\tau_d\dot{x}(t-\tau_d)$, giving the
+closed-loop error equation
+\begin{equation}
+\label{eq:neutral}
+    \dot{z}(t) = -\kappa\big[z(t-\tau_d) + \tau_d\,\dot{z}(t-\tau_d)\big],
+\end{equation}
+which contains the delayed \emph{derivative} and is therefore of
+neutral type \cite{hale1993}. Equivalently
+$\frac{d}{dt}[z(t)+\kappa\tau_d z(t-\tau_d)]=-\kappa z(t-\tau_d)$,
+whose difference operator is stable iff $\kappa\tau_d<1$. Since
+\eqref{eq:plant} is exactly linear, \eqref{eq:neutral} is the exact
+closed loop.
+
+\begin{theorem}[Exact delay margin of the Taylor predictor]
+\label{thm:taylor}
+Let $\kappa>0$, $\tau_d>0$ and $h:=\kappa\tau_d$. The loop
+\eqref{eq:neutral} is exponentially stable iff
+\begin{equation}
+    h < h^{\ast} = \frac{\nu^{\ast}}{\sin\nu^{\ast}\big(1+(\nu^{\ast})^{2}\big)}
+    \approx 0.941680,
+\end{equation}
+where $\nu^{\ast}\approx2.798386$ is the smallest positive root of
+$\cos\nu+\nu\sin\nu=0$.
+\end{theorem}
+\begin{proof}
+The characteristic function is
+$\Delta(s)=s+\kappa(1+\tau_d s)e^{-s\tau_d}$. With $\lambda_c=s\tau_d$
+and $h=\kappa\tau_d$ this is
+$\lambda_c+h(1+\lambda_c)e^{-\lambda_c}=0$. As $h\to0^{+}$ the finite
+root is $\lambda_c\approx-h<0$, so the loop begins stable and
+instability requires an imaginary-axis crossing. Put
+$\lambda_c=j\nu$, $\nu>0$. Using
+$(1+j\nu)(\cos\nu-j\sin\nu)=(\cos\nu+\nu\sin\nu)+j(\nu\cos\nu-\sin\nu)$,
+\begin{align}
+    \text{Re}:&\quad h(\cos\nu+\nu\sin\nu)=0, \label{eq:re}\\
+    \text{Im}:&\quad \nu+h(\nu\cos\nu-\sin\nu)=0. \label{eq:im}
+\end{align}
+As $h>0$, \eqref{eq:re} forces $\cos\nu=-\nu\sin\nu$; substituting into
+\eqref{eq:im} gives $h=\nu/(\sin\nu-\nu\cos\nu)=\nu/[\sin\nu(1+\nu^{2})]$.
+The smallest positive root of $\cos\nu+\nu\sin\nu=0$ is $\nu^\ast$,
+giving $h^\ast$; larger roots give larger $h$ and so do not govern the
+first crossing. Since $h^\ast<1$ the difference operator is stable
+throughout $[0,h^\ast)$, no root chain escapes to $+\infty$, and the
+root condition is necessary and sufficient \cite{hale1993,michiels2007}.
+\end{proof}
+
+\begin{proposition}[No prediction beats first-order prediction]
+\label{prop:nopred}
+Feeding back the delayed measurement without prediction gives
+$\dot z(t)=-\kappa z(t-\tau_d)$, exponentially stable iff
+$\kappa\tau_d<\pi/2$. The Taylor predictor therefore \emph{reduces} the
+delay margin by the factor $\pi/(2h^{\ast})\approx1.668$, a loss of
+about $40\%$.
+\end{proposition}
+\begin{proof}
+For $\Delta(s)=s+\kappa e^{-s\tau_d}$ and $s=j\omega$ the real part
+gives $\cos\omega\tau_d=0$, so $\omega\tau_d=\pi/2$, and the imaginary
+part gives $\omega=\kappa$. Compare with Theorem~\ref{thm:taylor}.
+\end{proof}
+
+Both constants were confirmed by numerical continuation of the
+rightmost characteristic root; the computed sign changes bracket
+$0.9417$ and $1.5708$ (Fig.~\ref{fig:delay}(a));
+Fig.~\ref{fig:delay}(b) shows the corresponding unsaturated
+trajectories on either side of $h^\ast$.
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{fig_delay}
+    \caption{Corrected delay analysis. (a) Rightmost characteristic
+    root versus $h=\kappa\tau_d$: the first-order Taylor predictor
+    loses stability at $h^\ast\approx0.942$, \emph{before} the
+    unpredicted loop at $\pi/2$. (b) Simulation of the exactly linear
+    plant without saturation.}
+    \label{fig:delay}
+\end{figure}
+
+\begin{remark}[Why a retarded Lyapunov--Krasovskii argument fails]
+\label{rem:badproof}
+It is tempting---and we initially attempted---to certify
+\eqref{eq:neutral} with
+$V_{LK}=\tfrac12z^2(t)+\tfrac{\kappa\tau_d}{2}\int_{t-\tau_d}^{t}z^2(\theta)\,d\theta$
+and conclude $\tau_d<1/\kappa$. This fails, and worth recording because
+the bound errs in \emph{direction}, not merely tightness: a memory
+term penalising $z^2$ cannot dominate the cross term in
+$\dot z(t-\tau_d)$ that a \emph{neutral} equation produces---a
+functional penalising $\dot z^2$ over the window is required
+\cite{hale1993}---and closing the argument by asserting
+$z^2(t-\tau_d)\ge\tau_d^2\dot z^2(t-\tau_d)$ is circular, since along
+$\dot z=-\kappa z$ it reads $1-(\kappa\tau_d)^2\ge0$, the conclusion
+itself. The resulting $\kappa\tau_d<1$ coincides with the (necessary
+but weaker) difference-operator condition, not $h^\ast$. A linear
+delay equation does not undergo a Hopf bifurcation; it exhibits a root
+crossing.
+\end{remark}
+
+The remedy is the classical dead-time compensator
+\cite{smith1957,manitius1979,krstic2009}: integrate the model across
+the unmeasured window rather than extrapolating linearly,
+\begin{equation}
+\label{eq:smith}
+    \hat{x}(t) = x(t-\tau_d) + \int_{t-\tau_d}^{t}\!\big[F(\hat{x},s) + G\,v(s)\big]\,ds ,
+\end{equation}
+evaluated by fixed-step RK4 using the known applied input history.
+Under an exact model the prediction is exact, the delay is cancelled
+and $\dot z=-\kappa z$ is recovered for arbitrary $\tau_d$. An
+innovation term $L(x(s)-\hat{x}(s))$ may be appended to
+\eqref{eq:smith} only for $s\le t-\tau_d$; inside the prediction window
+no measurement exists, so the integration there must be open loop.
+Implementations that interpolate the true state across the window are
+non-causal. Enforcing strict causality changes reported metrics by less
+than $0.2\%$ under a well-matched model, but the distinction is
+required for correctness and would matter under larger mismatch.
+
+\section{Numerical Results}
+\label{sec:results}
+Equation~\eqref{eq:plant} was integrated with adaptive RK45
+($\mathrm{rtol}=10^{-7}$, $\mathrm{atol}=10^{-9}$) over $T=25$~yr under
+Table~\ref{tab:calib}. Metrics are peak $N$; integrated absolute error
+$\mathrm{IAE}=\int|N-\Nt|\,dt$; integrated squared effort
+$\mathrm{ISCE}=\int\tau^2dt$; terminal output $Y_f$; saturation duty
+$S$; and whether the trajectory breaches $1.05\Nt$.
+
+\begin{table}[!t]
+\centering
+\caption{Controller performance ($\eta=1.4$, $\tau_d=1$~yr, $\tau_{\max}=1$, $T=25$~yr)}
+\label{tab:metrics}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lcccccc}
+\toprule
+Controller & peak $N$ & IAE & ISCE & $Y_f$ & $S$ [\%] & breach \\
+\midrule
+Open loop                  & $3.682$ & $14.30$ & $0.00$ & $32.93$ & $0.0$  & yes \\
+Static tax $22\%$          & $2.789$ & $12.09$ & $1.21$ & $24.94$ & $0.0$  & yes \\
+CLF, no lag                & $1.543$ & $4.64$  & $8.55$ & $13.80$ & $30.3$ & yes \\
+CLF $+$ Taylor pred.       & $1.542$ & $4.65$  & $8.55$ & $13.79$ & $29.6$ & yes \\
+CLF $+$ Smith pred.        & $1.542$ & $\bm{4.63}$ & $8.56$ & $13.79$ & $30.3$ & yes \\
+CBF filter $+$ Smith pred. & $\bm{1.538}$ & $4.65$ & $8.59$ & $13.76$ & $30.0$ & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{Attenuation without invariance.} Table~\ref{tab:metrics} gives
+the primary comparison: closed-loop feedback reduces IAE from $14.30$
+to $4.63$ ($67.6\%$) and peak consumption from $3.682\Nt$ to
+$1.542\Nt$ ($58.1\%$)---both large and policy-relevant, but neither is
+invariance: every admissible controller breaches the ceiling,
+consistent with Proposition~\ref{prop:feas}, with the actuator
+saturated for about $30\%$ of the horizon (Fig.~\ref{fig:controllers}).
+
+\emph{Predictor comparison.} At the nominal calibration
+$\kappa\tau_d=1.0$, only marginally beyond $h^\ast$, the two predictors
+are close in Table~\ref{tab:metrics}; Table~\ref{tab:delay} separates
+them in the unsaturated regime: the Taylor predictor's residual
+oscillation grows by a factor of $768$ across the sweep, inflecting
+sharply at $\kappa\tau_d\approx h^\ast$ as Theorem~\ref{thm:taylor}
+predicts, against $4.6$ for the model-based predictor---inverting the
+intuition, which we initially followed, that first-order prediction
+enlarges the stability region.
+
+\begin{table}[!t]
+\centering
+\caption{Residual oscillation of $N$ vs.\ reporting delay ($\kappa=1$, unsaturated)}
+\label{tab:delay}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{cccc}
+\toprule
+$\tau_d$ [yr] & $\kappa\tau_d$ & Taylor pred. & Smith pred. \\
+\midrule
+$0.50$ & $0.50$ & $0.0011$ & $0.0008$ \\
+$0.90$ & $0.90$ & $0.0034$ & $0.0013$ \\
+$1.00$ & $1.00$ & $0.0066$ & $0.0014$ \\
+$1.25$ & $1.25$ & $0.0439$ & $0.0019$ \\
+$1.50$ & $1.50$ & $0.3451$ & $0.0024$ \\
+$2.00$ & $2.00$ & $0.8310$ & $0.0038$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=\columnwidth]{fig_controllers}
+    \caption{Trajectories at $\tau_d=1$~yr. (a) Resource draw: feedback
+    delays and flattens the breach but does not prevent it. (b) Fiscal
+    signal: the tax is railed at $\tau_{\max}$ over the final third of
+    the horizon, which is why controller-design choices have little
+    leverage.}
+    \label{fig:controllers}
+\end{figure}
+
+\emph{Required authority and its cost.} Sweeping the actuator ceiling,
+invariance first obtains at $\tau_{\max}\approx220\%$---close to the
+analytic $223\%$ of Proposition~\ref{prop:feas}---at a cost of $35.0\%$
+of terminal output ($13.76\to8.94$): defending the $460$~TWh/yr
+ceiling against these paths costs roughly a third of terminal digital
+output.
+
+\emph{Robustness.} Over $300$ Monte Carlo draws of the four genuinely
+uncertain quantities $(\eta,\lambda,\gamma,M)$, the open loop breaches
+in $94\%$ of draws and the closed loop in $77\%$; no draw destabilises,
+but the residual breach rate is governed by whether $\eta>1$, not
+control design. Consistent with Remark~\ref{rem:convex}, the same
+draws give a mean peak requirement
+$\mathbb{E}[\max_t\tau_{\rm req}]=241\%$ against the nominal $223\%$
+and a 90th percentile of $318\%$: sizing $\tau_{\max}$ from the nominal
+calibration understates the requirement at every quantile above the
+median.
+
+\subsection{Negative Findings}
+\label{sec:neg}
+Several comparisons one might expect to favour the proposed machinery
+do not: with a non-negative tax the barrier and Lyapunov designs
+coincide almost exactly (peak $1.538$ vs.\ $1.542$; $Y_f$ $13.76$
+vs.\ $13.79$) and, with ample authority, both converge onto the ceiling
+($N=0.9994$ and $0.9996$)---we had expected the barrier to preserve a
+margin, but the disturbance drives $N$ upward and a one-sided tax can
+only resist. Varying the class-$\mathcal{K}$ gain $\alpha$ over
+$[0.2,2.0]$ moves peak $N$ only from $1.519$ to $1.544$, and holding
+the controller's internal model at nominal while perturbing the plant
+changes the $95$th-percentile peak from $1.887$ to $1.890$. All three
+share one explanation: for roughly a third of the horizon the actuator
+is railed, and a railed actuator consults neither its model, its gain,
+nor its certificate---itself a reason to report the feasibility
+boundary rather than a controller ranking. The barrier's value here is
+the \emph{certificate} \eqref{eq:vreq}, not improved trajectories.
+
+\section{Discussion and Conclusion}
+Treating resource policy as feedback is well posed and worthwhile: it
+delivers a $68\%$ reduction in cumulative boundary violation and a
+$58\%$ reduction in peak draw from a signal computable from delayed
+data, provided the predictor is model-based rather than a truncated
+expansion. What it does not buy is the elimination of backfire. The
+obstruction is structural: because the required tax is exponential in
+the log-consumption gap, a price instrument capable of defending a
+hard ceiling against sustained demand growth plus rebound must be so
+large that its political and distributional feasibility becomes the
+binding constraint instead---the dynamic counterpart of Weitzman's
+result \cite{weitzman1974} that, near a steep threshold, quantity
+instruments dominate price instruments. The constructive reading is
+that $v_{\rm req}-v_{\max}$ in \eqref{eq:vreq} is computable in real
+time from observable data and is precisely the signal indicating when
+a price instrument must be supplemented by a quantity instrument.
+
+Two reversals relative to the velocity-rejection view deserve emphasis:
+by Remark~\ref{rem:level} the disturbance to be tracked is the
+efficiency \emph{level}, not its velocity, so a controller built to
+reject $\edot$ is rejecting a stabilising signal; and by
+Proposition~\ref{prop:nopred} the intuitive delay fix makes matters
+worse. Both errors are invisible in a model with defects D1--D3---the
+practical argument for dimensional and definitional consistency before
+control design.
+
+\emph{Limitations.} Equation~\eqref{eq:plant} is a scalar reduced form
+with one instrument---no capital stock, sectoral disaggregation, trade
+leakage, endogenous innovation response, or forward-looking
+expectations. The last is most serious: an agent anticipating a rising
+tax would reallocate intertemporally, a channel a partial-adjustment
+rule cannot represent. The headline depends on $\eta>1$, which the
+economy-wide literature does not establish \cite{gillingham2016};
+Corollary~\ref{cor:etacrit} and the full sweep, not a point claim, are
+the appropriate summary. We model a pure reporting delay rather than
+quarterly sampling, which would add roughly half a sampling interval of
+effective delay and require discrete-time barrier conditions; $Y_f$ is
+a scalar output proxy with no welfare or incidence analysis. Future
+work should replace the pointwise barrier with a receding-horizon
+formulation \cite{mayne2014} over a forecast $\mu$ trajectory, treat
+$\tau_{\max}$ as a decision variable in a joint price--quantity design,
+and identify $\eta$ and $\lambda$ from data with quantified
+uncertainty, since the policy conclusion turns on which side of
+$0.948$ the elasticity lies.
+
+Jevons' paradox is a legitimate object of control-theoretic study, but
+the obvious state-space encoding of it is not. Imposing the identity
+yields a scalar plant in which backfire holds iff $\eta>1$ and
+efficiency gains lower consumption before raising them. In that plant
+delay compensation by first-order Taylor extrapolation \emph{shrinks}
+the delay margin from $\kappa\tau_d<\pi/2$ to $\kappa\tau_d<0.9417$.
+Autonomous demand growth alone is controllable with a $75\%$ tax;
+adding the rebound channel raises the requirement to $223\%$, and the
+feasibility limit $\eta_{\rm crit}=0.948$ is stricter than the backfire
+threshold. Fiscal feedback is therefore necessary for boundary defence,
+demonstrably insufficient on its own, and the safety-critical
+formulation makes that insufficiency measurable in advance.
+
+\section*{Acknowledgment}
+Portions of this manuscript were drafted with the assistance of a large
+language model (Anthropic Claude), which was used for prose drafting
+and \LaTeX{} preparation in
+Sections~\ref{sec:defects}--\ref{sec:neg}; the model formulation,
+proofs, numerical results and all conclusions were derived and verified
+by the author, who takes full responsibility for the content.
+
+\section*{Reproducibility}
+All figures and every number in Tables~\ref{tab:metrics}
+and~\ref{tab:delay} are produced by the accompanying Python suite under
+the calibration of Table~\ref{tab:calib}.
+Propositions~\ref{prop:backfire}--\ref{prop:signature} and
+Corollary~\ref{cor:etacrit} were checked against simulation; the delay
+margins of Theorem~\ref{thm:taylor} and Proposition~\ref{prop:nopred}
+against numerical continuation of the rightmost characteristic root.
+
+\balance
+
+\begin{thebibliography}{99}
+
+\bibitem{jevons1865}
+W.~S. Jevons, \emph{The Coal Question}.\hskip 1em plus 0.5em minus 0.4em\relax
+London, UK: Macmillan, 1865.
+
+\bibitem{khazzoom1980}
+J.~D. Khazzoom, ``Economic implications of mandated efficiency in standards for
+household appliances,'' \emph{Energy J.}, vol.~1, no.~4, pp. 21--40, 1980.
+
+\bibitem{brookes1990}
+L.~Brookes, ``Energy efficiency and economic growth,'' \emph{Energy Policy},
+vol.~18, no.~2, pp. 199--201, 1990.
+
+\bibitem{saunders2008}
+H.~D. Saunders, ``Fuel conserving (and using) production functions,''
+\emph{Energy Econ.}, vol.~30, no.~5, pp. 2184--2235, 2008.
+
+\bibitem{sorrell2009}
+S.~Sorrell, ``Jevons' paradox revisited: The evidence for backfire from improved
+energy efficiency,'' \emph{Energy Policy}, vol.~37, no.~4, pp. 1456--1469, 2009.
+
+\bibitem{sorrell2007}
+S.~Sorrell, \emph{The Rebound Effect}.\hskip 1em plus 0.5em minus 0.4em\relax
+London, UK: UK Energy Research Centre, 2007.
+
+\bibitem{gillingham2016}
+K.~Gillingham, D.~Rapson, and G.~Wagner, ``The rebound effect and energy
+efficiency policy,'' \emph{Rev. Environ. Econ. Policy}, vol.~10, no.~1,
+pp. 68--88, 2016.
+
+\bibitem{coroama2019}
+V.~C. Coroam\u{a} and F.~Mattern, ``Digital rebound: Why digitalization will not
+redeem us our environmental sins,'' in \emph{Proc. ICT4S}, Lappeenranta,
+Finland, 2019.
+
+\bibitem{rockstrom2009}
+J.~Rockstr{\"o}m \emph{et al.}, ``A safe operating space for humanity,''
+\emph{Nature}, vol.~461, no.~7263, pp. 472--475, 2009.
+
+\bibitem{weitzman1974}
+M.~L. Weitzman, ``Prices vs. quantities,'' \emph{Rev. Econ. Stud.}, vol.~41,
+no.~4, pp. 477--491, 1974.
+
+\bibitem{kokotovic2001}
+P.~Kokotovi\'{c} and M.~Arcak, ``Constructive nonlinear control: A historical
+perspective,'' \emph{Automatica}, vol.~37, no.~5, pp. 637--662, 2001.
+
+\bibitem{ames2017}
+A.~D. Ames, X.~Xu, J.~W. Grizzle, and P.~Tabuada, ``Control barrier function
+based quadratic programs for safety critical systems,'' \emph{IEEE Trans.
+Autom. Control}, vol.~62, no.~8, pp. 3861--3876, 2017.
+
+\bibitem{smith1957}
+O.~J.~M. Smith, ``Closer control of loops with dead time,'' \emph{Chem. Eng.
+Prog.}, vol.~53, no.~5, pp. 217--219, 1957.
+
+\bibitem{manitius1979}
+A.~Z. Manitius and A.~W. Olbrot, ``Finite spectrum assignment problem for
+systems with delays,'' \emph{IEEE Trans. Autom. Control}, vol.~24, no.~4,
+pp. 541--552, 1979.
+
+\bibitem{krstic2009}
+M.~Krsti\'{c}, \emph{Delay Compensation for Nonlinear, Adaptive, and PDE
+Systems}.\hskip 1em plus 0.5em minus 0.4em\relax Boston, MA: Birkh{\"a}user, 2009.
+
+\bibitem{hale1993}
+J.~K. Hale and S.~M. Verduyn Lunel, \emph{Introduction to Functional
+Differential Equations}.\hskip 1em plus 0.5em minus 0.4em\relax New York, NY:
+Springer-Verlag, 1993.
+
+\bibitem{michiels2007}
+W.~Michiels and S.-I. Niculescu, \emph{Stability and Stabilization of Time-Delay
+Systems: An Eigenvalue-Based Approach}.\hskip 1em plus 0.5em minus 0.4em\relax
+Philadelphia, PA: SIAM, 2007.
+
+\bibitem{mayne2014}
+D.~Q. Mayne, ``Model predictive control: Recent developments and future
+promise,'' \emph{Automatica}, vol.~50, no.~12, pp. 2967--2986, 2014.
+
+\bibitem{iea2024}
+International Energy Agency, \emph{Electricity 2024: Analysis and Forecast to
+2026}.\hskip 1em plus 0.5em minus 0.4em\relax Paris, France: IEA, 2024.
+
+\end{thebibliography}
+
+\end{document}
